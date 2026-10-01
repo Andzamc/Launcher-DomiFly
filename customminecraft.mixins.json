@@ -1,0 +1,17 @@
+{
+	"required": true,
+	"package": "wtf.flonxi.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"WindowTitleMixin",
+		"WindowAccessor",
+		"LoadingOverlayMixin",
+		"TitleScreenMixin",
+		"LogoRendererMixin",
+		"TitleScreenAccessor",
+		"InGameHudMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

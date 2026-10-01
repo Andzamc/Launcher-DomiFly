@@ -1,8 +1,13 @@
-appId: 'helioslauncher'
-productName: 'Helios Launcher'
+appId: 'com.domifly.launcher'
+productName: 'DomiFly Launcher'
 artifactName: '${productName}-setup-${version}.${ext}'
 
-copyright: 'Copyright © 2018-2026 Daniel Scalzi'
+copyright: 'Copyright © 2026 ZamcDev'
+publish:
+  provider: github
+  owner: andzamc
+  repo: Launcher-DomiFly
+  releaseType: realease
 
 asar: true
 compression: 'maximum'
@@ -39,10 +44,10 @@ mac:
 # Linux Configuration
 linux: 
   target: 'AppImage'
-  maintainer: 'Daniel Scalzi'
-  vendor: 'Daniel Scalzi'
-  synopsis: 'Modded Minecraft Launcher'
-  description: 'Custom launcher which allows users to join modded servers. All mods, configurations, and updates are handled automatically.'
+  maintainer: 'ZamcDev'
+  vendor: 'ZamcDev'
+  synopsis: 'Launcher personalizado de Minecraft para DomiFly'
+  description: 'Launcher automatizado para el servidor DomiFly. Descarga, actualiza y gestiona automáticamente los mods, Java y configuraciones necesarias para jugar.'
   category: 'Game'
 
 

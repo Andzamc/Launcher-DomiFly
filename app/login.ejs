@@ -1,65 +1,180 @@
+<!-- ============================================================================== -->
+<!-- VISTA DE LOGIN - DOMIFLY MINECRAFT (AUTENTICACIÓN CON ELY.BY)                 -->
+<!-- ============================================================================== -->
 <div id="loginContainer" style="display: none;">
-    <div id="loginCancelContainer" style="display: none;">
-        <button id="loginCancelButton">
-            <div id="loginCancelIcon">X</div>
-            <span id="loginCancelText"><%- lang('login.loginCancelText') %></span>
-        </button>
-    </div>
-    <div id="loginContent">
-        <form id="loginForm">
-            <img id="loginImageSeal" src="assets/images/SealCircle.png"/>
-            <span id="loginSubheader"><%- lang('login.loginSubheader') %></span>
-            <div class="loginFieldContainer">
-                <svg id="profileSVG" class="loginSVG" viewBox="40 37 65.36 61.43">
-                    <g>
-                        <path d="M86.77,58.12A13.79,13.79,0,1,0,73,71.91,13.79,13.79,0,0,0,86.77,58.12M97,103.67a3.41,3.41,0,0,0,3.39-3.84,27.57,27.57,0,0,0-54.61,0,3.41,3.41,0,0,0,3.39,3.84Z"/>
-                    </g>
-                </svg>
-                <span class="loginErrorSpan" id="loginEmailError"><%- lang('login.loginEmailError') %></span>
-                <input id="loginUsername" class="loginField" type="text" placeholder="<%- lang('login.loginEmailPlaceholder') %>"/>
-            </div>
-            <div class="loginFieldContainer">
-                <svg id="lockSVG" class="loginSVG" viewBox="40 32 60.36 70.43">
-                    <g>
-                        <path d="M86.16,54a16.38,16.38,0,1,0-32,0H44V102.7H96V54Zm-25.9-3.39a9.89,9.89,0,1,1,19.77,0A9.78,9.78,0,0,1,79.39,54H60.89A9.78,9.78,0,0,1,60.26,50.59ZM70,96.2a6.5,6.5,0,0,1-6.5-6.5,6.39,6.39,0,0,1,3.1-5.4V67h6.5V84.11a6.42,6.42,0,0,1,3.39,5.6A6.5,6.5,0,0,1,70,96.2Z"/>
-                    </g>
-                </svg>
-                <span class="loginErrorSpan" id="loginPasswordError"><%- lang('login.loginPasswordError') %></span>
-                <input id="loginPassword" class="loginField" type="password" placeholder="<%- lang('login.loginPasswordPlaceholder') %>"/>
-            </div>
-            <div id="loginOptions">
-                <span class="loginSpanDim">
-                    <a href="<%- lang('login.loginForgotPasswordLink') %>"><%- lang('login.loginForgotPasswordText') %></a>
-                </span>
-                <label id="checkmarkContainer">
-                    <input id="loginRememberOption" type="checkbox" checked>
-                    <span id="loginRememberText" class="loginSpanDim"><%- lang('login.loginRememberMeText') %></span>
-                    <span class="loginCheckmark"></span>
-                </label>
-            </div>
-            <button id="loginButton" disabled>
-                <div id="loginButtonContent">
-                    <%- lang('login.loginButtonText') %>
-                    <svg id="loginSVG" viewBox="0 0 24.87 13.97">
-                        <defs>
-                            <style>.arrowLine{fill:none;stroke:#FFF;stroke-width:2px;transition: 0.25s ease;}</style>
-                        </defs>
-                        <polyline class="arrowLine" points="0.71 13.26 12.56 1.41 24.16 13.02"/>
-                    </svg>
-                    <div class="circle-loader">
-                        <div class="checkmark draw"></div>
-                    </div>
-                    <!--<div class="spinningCircle" id="loginSpinner"></div>-->
+    <style>
+        /* Contenedor principal que cubre toda la pantalla del launcher */
+        #loginContainer {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 50;
+        }
+
+        /* Fondo semitransparente oscuro que oscurece el fondo del launcher */
+        #loginContainer .dfx-backdrop {
+            width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(8, 10, 14, 0.72);
+        }
+
+        /* Tarjeta central del formulario de login */
+        #loginContainer .dfx-card {
+            width: 360px; max-width: calc(100% - 32px);
+            padding: 28px 28px 22px;
+            background: #14181f;
+            border: 1px solid #262e3b;
+            border-radius: 10px;
+            box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+            color: #e6e9ef;
+            text-align: center;
+        }
+
+        /* Contenedor del Avatar y Skin Preview */
+        #loginContainer .dfx-avatar-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        #loginContainer .dfx-avatar-box {
+            width: 82px;
+            height: 82px;
+            border-radius: 50%;
+            border: 2px solid #2f7bf5;
+            background: #0e1116;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(47, 123, 245, 0.35);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        #loginContainer .dfx-avatar-box:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 26px rgba(47, 123, 245, 0.55);
+        }
+
+        #loginContainer .dfx-avatar-img {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            image-rendering: pixelated;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+
+        #loginContainer .dfx-avatar-badge {
+            margin-top: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #4ade80;
+            background: rgba(74, 222, 128, 0.12);
+            border: 1px solid rgba(74, 222, 128, 0.28);
+            border-radius: 12px;
+            padding: 2px 10px;
+            letter-spacing: 0.5px;
+            animation: fadeInBadge 0.3s ease;
+        }
+
+        @keyframes fadeInBadge {
+            from { opacity: 0; transform: translateY(-3px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Logo de la tarjeta */
+        #loginContainer .dfx-logo { width: 84px; height: 84px; margin-bottom: 8px; }
+
+        /* Título principal ("DomiFly Minecraft") */
+        #loginContainer .dfx-title { margin: 0 0 4px; font-size: 22px; font-weight: 700; color: #fff; }
+
+        /* Subtítulo explicativo */
+        #loginContainer .dfx-sub { margin: 0 0 18px; font-size: 13px; line-height: 1.4; color: #9aa4b5; }
+
+        /* Contenedor de cada campo de texto (label + input) */
+        #loginContainer .dfx-field { text-align: left; margin-bottom: 12px; }
+
+        /* Etiquetas de texto sobre los campos ("Usuario", "Contraseña") */
+        #loginContainer .dfx-field label { display: block; margin-bottom: 5px; font-size: 12px; color: #9aa4b5; }
+
+        /* Cajas de texto donde el usuario escribe */
+        #loginContainer .dfx-field input {
+            box-sizing: border-box; width: 100%; height: 38px; padding: 0 12px;
+            background: #0e1116; color: #fff;
+            border: 1px solid #2b3444; border-radius: 6px;
+            font-size: 14px; outline: none;
+        }
+
+        /* Efecto al hacer clic dentro de una caja de texto (borde azul) */
+        #loginContainer .dfx-field input:focus { border-color: #2f7bf5; box-shadow: 0 0 0 2px rgba(47, 123, 245, 0.28); }
+
+        /* Mensaje de error en color rojo */
+        #loginContainer .dfx-error { min-height: 18px; margin: 2px 0 10px; font-size: 13px; color: #ff6b6b; text-align: left; }
+
+        /* Botón azul "Entrar al servidor" */
+        #loginContainer .dfx-button {
+            width: 100%; height: 42px;
+            background: #2f7bf5; color: #fff;
+            border: 0; border-radius: 6px;
+            font-size: 15px; font-weight: 700; cursor: pointer;
+        }
+
+        /* Efecto al pasar el cursor sobre el botón (azul más claro) */
+        #loginContainer .dfx-button:hover { background: #4a8df7; }
+
+        /* Botón cuando está cargando (desactivado) */
+        #loginContainer .dfx-button[disabled] { background: #2a3a57; color: #8fa0bf; cursor: default; }
+
+        /* Enlace "Crear cuenta en Ely.by" */
+        #loginContainer .dfx-register { display: inline-block; margin-top: 14px; font-size: 12px; color: #6ea3f7; cursor: pointer; text-decoration: none; }
+        #loginContainer .dfx-register:hover { text-decoration: underline; }
+    </style>
+
+    <!-- Estructura visual centrada -->
+    <div class="dfx-backdrop">
+        <div class="dfx-card">
+            <!-- Avatar / Vista previa dinámica de Skin de Ely.by -->
+            <div class="dfx-avatar-container">
+                <div class="dfx-avatar-box" id="loginAvatarBox">
+                    <img class="dfx-avatar-img" id="loginAvatarImg" src="assets/images/SealCircle.png" alt="Skin Preview">
                 </div>
-            </button>
-            <div id="loginDisclaimer">
-                <span class="loginSpanDim" id="loginRegisterSpan">
-                    <a href="<%- lang('login.loginNeedAccountLink') %>"><%- lang('login.loginNeedAccountText') %></a>
-                </span>
-                <p class="loginDisclaimerText"><%- lang('login.loginPasswordDisclaimer1') %></p>
-                <p class="loginDisclaimerText"><%- lang('login.loginPasswordDisclaimer2', { appName: lang('app.title') }) %></p>
+                <div class="dfx-avatar-badge" id="loginAvatarBadge" style="display: none;">Skin de Ely.by</div>
             </div>
-        </form>
+
+            <!-- Título y descripción -->
+            <h1 class="dfx-title">DomiFly Minecraft</h1>
+            <p class="dfx-sub">Inicia sesión con tu cuenta de Ely.by para ver tu skin dentro del juego.</p>
+
+            <!-- Campo 1: Usuario o correo -->
+            <div class="dfx-field">
+                <label for="loginUsername">Usuario o correo de Ely.by</label>
+                <input id="loginUsername" type="text" autocomplete="username" spellcheck="false" placeholder="Tu usuario o correo">
+            </div>
+
+            <!-- Campo 2: Contraseña -->
+            <div class="dfx-field">
+                <label for="loginPassword">Contraseña</label>
+                <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Tu contraseña">
+            </div>
+
+            <!-- Campo 3: Verificación en 2 pasos (Solo se muestra automáticamente si la cuenta tiene 2FA) -->
+            <div class="dfx-field" id="loginTotpGroup" style="display: none;">
+                <label for="loginTotp">Código de verificación en dos pasos (2FA)</label>
+                <input id="loginTotp" type="text" inputmode="numeric" maxlength="8" autocomplete="one-time-code" spellcheck="false" placeholder="Código de 6 dígitos">
+            </div>
+
+            <!-- Mensaje de error dinámico (se rellena con JS si hay error) -->
+            <p class="dfx-error" id="loginError" role="alert"></p>
+
+            <!-- Botón de acción principal -->
+            <button class="dfx-button" id="loginButton" type="button">Entrar al servidor</button>
+
+            <!-- Enlace externo: al hacer clic abre https://account.ely.by/register en el navegador -->
+            <a class="dfx-register" id="loginRegister">Crear cuenta en Ely.by</a>
+        </div>
     </div>
+
+    <!-- SCRIPT DE CONTROL: Conecta los clics de los botones con la API de Ely.by -->
     <script src="./assets/js/scripts/login.js"></script>
 </div>

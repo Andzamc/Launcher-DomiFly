@@ -414,6 +414,12 @@ ipcRenderer.on(MSFT_OPCODE.REPLY_LOGIN, (_, ...arguments_) => {
             msftLoginLogger.info('Acquired authCode, proceeding with authentication.')
 
             const authCode = queryMap.code
+            // addMicrosoftAccount solo existe si el launcher tiene soporte Microsoft activo.
+            if(typeof AuthManager.addMicrosoftAccount !== 'function') {
+                msftLoginLogger.error('addMicrosoftAccount no está disponible en este launcher (solo Ely.by).')
+                switchView(getCurrentView(), viewOnClose, 500, 500)
+                return
+            }
             AuthManager.addMicrosoftAccount(authCode).then(value => {
                 updateSelectedAccount(value)
                 switchView(getCurrentView(), viewOnClose, 500, 500, async () => {
@@ -527,10 +533,7 @@ function processLogOut(val, isLastAccount){
                 validateSelectedAccount()
             }
             if(isLastAccount) {
-                loginOptionsCancelEnabled(false)
-                loginOptionsViewOnLoginSuccess = VIEWS.settings
-                loginOptionsViewOnLoginCancel = VIEWS.loginOptions
-                switchView(getCurrentView(), VIEWS.loginOptions)
+                switchView(getCurrentView(), VIEWS.login)
             }
         })
         $(parent).fadeOut(250, () => {
@@ -578,10 +581,7 @@ ipcRenderer.on(MSFT_OPCODE.REPLY_LOGOUT, (_, ...arguments_) => {
                     validateSelectedAccount()
                 }
                 if(isLastAccount) {
-                    loginOptionsCancelEnabled(false)
-                    loginOptionsViewOnLoginSuccess = VIEWS.settings
-                    loginOptionsViewOnLoginCancel = VIEWS.loginOptions
-                    switchView(getCurrentView(), VIEWS.loginOptions)
+                    switchView(getCurrentView(), VIEWS.login)
                 }
                 if(msAccDomElementCache) {
                     msAccDomElementCache.remove()
@@ -672,6 +672,15 @@ function populateAuthAccounts(){
 
     settingsCurrentMicrosoftAccounts.innerHTML = microsoftAuthAccountStr
     settingsCurrentMojangAccounts.innerHTML = mojangAuthAccountStr
+
+    // Cargar las skins de Ely.by para cada cuenta listada
+    authKeys.forEach((val) => {
+        const acc = authAccounts[val]
+        const img = document.querySelector(`.settingsAuthAccount[uuid="${acc.uuid}"] .settingsAuthAccountImage`)
+        if (img) {
+            SkinManager.applyAvatar(acc, img, 'body')
+        }
+    })
 }
 
 /**

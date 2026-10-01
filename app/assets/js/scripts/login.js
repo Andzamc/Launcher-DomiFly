@@ -1,234 +1,213 @@
 /**
- * Script for login.ejs
+ * ==============================================================================
+ * SCRIPT DE INICIO DE SESIÓN - DOMIFLY MINECRAFT (ELY.BY)
+ * ==============================================================================
+ * Este archivo se encarga de:
+ * 1. Capturar los datos que el usuario escribe (usuario, contraseña y 2FA).
+ * 2. Conectarse a los servidores de Ely.by a través de AuthManager.
+ * 3. Mostrar errores en pantalla si la contraseña es incorrecta o falta información.
+ * 4. Si el login es exitoso, guardar la sesión y pasar a la pantalla del juego (landing).
+ * 5. Abrir el navegador si el usuario hace clic en "Crear cuenta en Ely.by".
+ * ==============================================================================
  */
-// Validation Regexes.
-const validUsername         = /^[a-zA-Z0-9_]{1,16}$/
-const basicEmail            = /^\S+@\S+\.\S+$/
-//const validEmail          = /^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i
 
-// Login Elements
-const loginCancelContainer  = document.getElementById('loginCancelContainer')
-const loginCancelButton     = document.getElementById('loginCancelButton')
-const loginEmailError       = document.getElementById('loginEmailError')
-const loginUsername         = document.getElementById('loginUsername')
-const loginPasswordError    = document.getElementById('loginPasswordError')
-const loginPassword         = document.getElementById('loginPassword')
-const checkmarkContainer    = document.getElementById('checkmarkContainer')
-const loginRememberOption   = document.getElementById('loginRememberOption')
-const loginButton           = document.getElementById('loginButton')
-const loginForm             = document.getElementById('loginForm')
+// Usamos una función anónima autoejecutable (IIFE) para aislar las variables
+// y evitar que choquen con otros scripts del launcher (como uicore.js o landing.js).
+(function () {
 
-// Control variables.
-let lu = false, lp = false
+    // shell: Módulo de Electron que permite abrir enlaces en el navegador predeterminado de Windows.
+    const { shell } = require('electron')
 
+    // AuthManager: Módulo que maneja las peticiones HTTP seguras con la API de Ely.by.
+    const AuthManager = require('./assets/js/authmanager')
 
-/**
- * Show a login error.
- * 
- * @param {HTMLElement} element The element on which to display the error.
- * @param {string} value The error text.
- */
-function showError(element, value){
-    element.innerHTML = value
-    element.style.opacity = 1
-}
+    // --------------------------------------------------------------------------
+    // ELEMENTOS DEL HTML (Obtenidos mediante su ID definido en login.ejs)
+    // --------------------------------------------------------------------------
+    const userInput    = document.getElementById('loginUsername')   // Campo de texto para usuario o correo
+    const passInput    = document.getElementById('loginPassword')   // Campo de texto para la contraseña
+    const totpGroup    = document.getElementById('loginTotpGroup')  // Contenedor del campo 2FA (oculto por defecto)
+    const totpInput    = document.getElementById('loginTotp')       // Campo para el código 2FA
+    const errorLabel   = document.getElementById('loginError')      // Texto rojo donde se muestran los errores
+    const loginButton  = document.getElementById('loginButton')     // Botón principal "Entrar al servidor"
+    const registerLink = document.getElementById('loginRegister')   // Enlace azul "Crear cuenta en Ely.by"
+    const avatarImg    = document.getElementById('loginAvatarImg')   // Imagen del avatar/skin preview
+    const avatarBadge  = document.getElementById('loginAvatarBadge') // Etiqueta de skin detectada
+    const avatarBox    = document.getElementById('loginAvatarBox')   // Borde con efecto glow del avatar
 
-/**
- * Shake a login error to add emphasis.
- * 
- * @param {HTMLElement} element The element to shake.
- */
-function shakeError(element){
-    if(element.style.opacity == 1){
-        element.classList.remove('shake')
-        void element.offsetWidth
-        element.classList.add('shake')
+    // Texto predeterminado que muestra el botón cuando no está cargando
+    const BUTTON_TEXT = 'Entrar al servidor'
+
+    // Variables de control de estado:
+    let needsTotp = false // ¿La cuenta de Ely.by tiene activada la verificación en dos pasos (2FA)?
+    let busy      = false // ¿Hay una petición de inicio de sesión en curso? (evita clics dobles)
+
+    // --------------------------------------------------------------------------
+    // FUNCIONES AUXILIARES
+    // --------------------------------------------------------------------------
+
+    /**
+     * Muestra o limpia un mensaje de error debajo de los campos de texto.
+     * @param {string} message - El texto de error a mostrar. Si está vacío, se limpia.
+     */
+    function setError(message) {
+        errorLabel.textContent = message || ''
     }
-}
 
-/**
- * Validate that an email field is neither empty nor invalid.
- * 
- * @param {string} value The email value.
- */
-function validateEmail(value){
-    if(value){
-        if(!basicEmail.test(value) && !validUsername.test(value)){
-            showError(loginEmailError, Lang.queryJS('login.error.invalidValue'))
-            loginDisabled(true)
-            lu = false
-        } else {
-            loginEmailError.style.opacity = 0
-            lu = true
-            if(lp){
-                loginDisabled(false)
+    /**
+     * Bloquea o desbloquea los campos mientras se valida la cuenta.
+     * Si value es true, desactiva el botón y pone el texto "Conectando...".
+     * @param {boolean} value
+     */
+    function setBusy(value) {
+        busy = value
+        loginButton.disabled = value
+        loginButton.textContent = value ? 'Conectando...' : BUTTON_TEXT
+        userInput.disabled = value
+        passInput.disabled = value
+        totpInput.disabled = value
+    }
+
+    /**
+     * Muestra el campo de verificación en dos pasos (2FA) y pone el cursor en él.
+     */
+    function showTotp() {
+        needsTotp = true
+        totpGroup.style.display = 'block'
+        totpInput.focus()
+    }
+
+    /**
+     * Actualiza la vista previa del avatar y badge según el usuario escrito.
+     * @param {string} username Nickname escrito por el usuario.
+     */
+    function updateSkinPreview(username) {
+        if (!username || !username.trim()) {
+            if (avatarImg) avatarImg.src = 'assets/images/SealCircle.png'
+            if (avatarBadge) avatarBadge.style.display = 'none'
+            if (avatarBox) avatarBox.style.borderColor = '#2f7bf5'
+            return
+        }
+
+        const clean = username.trim()
+        SkinManager.getSkinDetails(clean).then((details) => {
+            if (avatarImg) {
+                avatarImg.src = details.avatar
             }
-        }
-    } else {
-        lu = false
-        showError(loginEmailError, Lang.queryJS('login.error.requiredValue'))
-        loginDisabled(true)
-    }
-}
-
-/**
- * Validate that the password field is not empty.
- * 
- * @param {string} value The password value.
- */
-function validatePassword(value){
-    if(value){
-        loginPasswordError.style.opacity = 0
-        lp = true
-        if(lu){
-            loginDisabled(false)
-        }
-    } else {
-        lp = false
-        showError(loginPasswordError, Lang.queryJS('login.error.invalidValue'))
-        loginDisabled(true)
-    }
-}
-
-// Emphasize errors with shake when focus is lost.
-loginUsername.addEventListener('focusout', (e) => {
-    validateEmail(e.target.value)
-    shakeError(loginEmailError)
-})
-loginPassword.addEventListener('focusout', (e) => {
-    validatePassword(e.target.value)
-    shakeError(loginPasswordError)
-})
-
-// Validate input for each field.
-loginUsername.addEventListener('input', (e) => {
-    validateEmail(e.target.value)
-})
-loginPassword.addEventListener('input', (e) => {
-    validatePassword(e.target.value)
-})
-
-/**
- * Enable or disable the login button.
- * 
- * @param {boolean} v True to enable, false to disable.
- */
-function loginDisabled(v){
-    if(loginButton.disabled !== v){
-        loginButton.disabled = v
-    }
-}
-
-/**
- * Enable or disable loading elements.
- * 
- * @param {boolean} v True to enable, false to disable.
- */
-function loginLoading(v){
-    if(v){
-        loginButton.setAttribute('loading', v)
-        loginButton.innerHTML = loginButton.innerHTML.replace(Lang.queryJS('login.login'), Lang.queryJS('login.loggingIn'))
-    } else {
-        loginButton.removeAttribute('loading')
-        loginButton.innerHTML = loginButton.innerHTML.replace(Lang.queryJS('login.loggingIn'), Lang.queryJS('login.login'))
-    }
-}
-
-/**
- * Enable or disable login form.
- * 
- * @param {boolean} v True to enable, false to disable.
- */
-function formDisabled(v){
-    loginDisabled(v)
-    loginCancelButton.disabled = v
-    loginUsername.disabled = v
-    loginPassword.disabled = v
-    if(v){
-        checkmarkContainer.setAttribute('disabled', v)
-    } else {
-        checkmarkContainer.removeAttribute('disabled')
-    }
-    loginRememberOption.disabled = v
-}
-
-let loginViewOnSuccess = VIEWS.landing
-let loginViewOnCancel = VIEWS.settings
-let loginViewCancelHandler
-
-function loginCancelEnabled(val){
-    if(val){
-        $(loginCancelContainer).show()
-    } else {
-        $(loginCancelContainer).hide()
-    }
-}
-
-loginCancelButton.onclick = (e) => {
-    switchView(getCurrentView(), loginViewOnCancel, 500, 500, () => {
-        loginUsername.value = ''
-        loginPassword.value = ''
-        loginCancelEnabled(false)
-        if(loginViewCancelHandler != null){
-            loginViewCancelHandler()
-            loginViewCancelHandler = null
-        }
-    })
-}
-
-// Disable default form behavior.
-loginForm.onsubmit = () => { return false }
-
-// Bind login button behavior.
-loginButton.addEventListener('click', () => {
-    // Disable form.
-    formDisabled(true)
-
-    // Show loading stuff.
-    loginLoading(true)
-
-    AuthManager.addMojangAccount(loginUsername.value, loginPassword.value).then((value) => {
-        updateSelectedAccount(value)
-        loginButton.innerHTML = loginButton.innerHTML.replace(Lang.queryJS('login.loggingIn'), Lang.queryJS('login.success'))
-        $('.circle-loader').toggleClass('load-complete')
-        $('.checkmark').toggle()
-        setTimeout(() => {
-            switchView(VIEWS.login, loginViewOnSuccess, 500, 500, async () => {
-                // Temporary workaround
-                if(loginViewOnSuccess === VIEWS.settings){
-                    await prepareSettings()
+            if (avatarBadge) {
+                avatarBadge.style.display = 'inline-block'
+                if (details.hash && details.hash !== 'steve') {
+                    avatarBadge.textContent = 'Skin de Ely.by vinculada'
+                    avatarBadge.style.color = '#4ade80'
+                    avatarBadge.style.borderColor = 'rgba(74, 222, 128, 0.28)'
+                    avatarBadge.style.background = 'rgba(74, 222, 128, 0.12)'
+                    if (avatarBox) avatarBox.style.borderColor = '#4ade80'
+                } else {
+                    avatarBadge.textContent = 'Cuenta de Ely.by'
+                    avatarBadge.style.color = '#60a5fa'
+                    avatarBadge.style.borderColor = 'rgba(96, 165, 250, 0.28)'
+                    avatarBadge.style.background = 'rgba(96, 165, 250, 0.12)'
+                    if (avatarBox) avatarBox.style.borderColor = '#2f7bf5'
                 }
-                loginViewOnSuccess = VIEWS.landing // Reset this for good measure.
-                loginCancelEnabled(false) // Reset this for good measure.
-                loginViewCancelHandler = null // Reset this for good measure.
-                loginUsername.value = ''
-                loginPassword.value = ''
-                $('.circle-loader').toggleClass('load-complete')
-                $('.checkmark').toggle()
-                loginLoading(false)
-                loginButton.innerHTML = loginButton.innerHTML.replace(Lang.queryJS('login.success'), Lang.queryJS('login.login'))
-                formDisabled(false)
-            })
-        }, 1000)
-    }).catch((displayableError) => {
-        loginLoading(false)
+            }
+        }).catch(() => {})
+    }
 
-        let actualDisplayableError
-        if(isDisplayableError(displayableError)) {
-            msftLoginLogger.error('Error while logging in.', displayableError)
-            actualDisplayableError = displayableError
-        } else {
-            // Uh oh.
-            msftLoginLogger.error('Unhandled error during login.', displayableError)
-            actualDisplayableError = Lang.queryJS('login.error.unknown')
+    // --------------------------------------------------------------------------
+    // FUNCIÓN PRINCIPAL DE INICIO DE SESIÓN
+    // --------------------------------------------------------------------------
+    async function doLogin() {
+        // Si ya está procesando un intento de login, no hacer nada para evitar saturación
+        if (busy) return
+
+        // Obtenemos los valores escritos por el usuario (quitando espacios en blanco innecesarios)
+        const user = userInput.value.trim()
+        const pass = passInput.value
+        const totp = totpInput.value.trim()
+
+        // Validación 1: Verificar que no deje los campos vacíos
+        if (!user || !pass) {
+            setError('Escribe tu usuario o correo y tu contraseña de Ely.by.')
+            return
         }
 
-        setOverlayContent(actualDisplayableError.title, actualDisplayableError.desc, Lang.queryJS('login.tryAgain'))
-        setOverlayHandler(() => {
-            formDisabled(false)
-            toggleOverlay(false)
+        // Validación 2: Si la cuenta requiere 2FA, verificar que haya escrito el código
+        if (needsTotp && !totp) {
+            setError('Escribe el código de verificación en dos pasos.')
+            totpInput.focus()
+            return
+        }
+
+        // Limpiar cualquier error previo y activar el estado "Cargando..."
+        setError('')
+        setBusy(true)
+
+        try {
+            // Enviamos las credenciales a Ely.by y guardamos el token de sesión
+            const account = await AuthManager.addElyAccount(user, pass, needsTotp ? totp : undefined)
+
+            // Limpiamos los campos de la contraseña por seguridad
+            passInput.value = ''
+            totpInput.value = ''
+            needsTotp = false
+            totpGroup.style.display = 'none'
+
+            // Actualizamos el nombre de usuario y el avatar en la pantalla principal (landing)
+            if (typeof updateSelectedAccount === 'function') {
+                updateSelectedAccount(account)
+            }
+
+            // Desbloqueamos el botón y cambiamos de pantalla hacia la interfaz del juego
+            setBusy(false)
+            switchView(getCurrentView(), VIEWS.landing, 500, 500)
+
+        } catch (err) {
+            // Si hubo un error (contraseña mala, sin internet, etc.):
+            setBusy(false)
+
+            // Si el servidor de Ely.by nos indica que la cuenta tiene 2FA activado:
+            if (AuthManager.requiresTwoFactor(err) && !needsTotp) {
+                showTotp()
+            }
+
+            // Mostramos el mensaje de error legible al usuario
+            setError(AuthManager.describeError(err))
+            console.error('[login] Error al iniciar sesión con Ely.by:', err)
+        }
+    }
+
+    // --------------------------------------------------------------------------
+    // ASIGNACIÓN DE EVENTOS (LISTENERS)
+    // --------------------------------------------------------------------------
+
+    // 1. Al hacer clic en el botón "Entrar al servidor" -> Ejecutar doLogin()
+    loginButton.addEventListener('click', doLogin)
+
+    // 2. Al presionar la tecla Enter en cualquiera de los campos -> Ejecutar doLogin()
+    for (const input of [userInput, passInput, totpInput]) {
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') doLogin()
         })
-        toggleOverlay(true)
+    }
+
+    // 3. Al hacer clic en "Crear cuenta en Ely.by" -> Abrir la web de registro en el navegador
+    registerLink.addEventListener('click', (e) => {
+        e.preventDefault()
+        shell.openExternal('https://account.ely.by/register')
     })
 
-})
+    // 4. Al escribir el usuario o correo -> Previsualizar la skin de Ely.by en tiempo real
+    let skinDebounceTimer = null
+    userInput.addEventListener('input', () => {
+        clearTimeout(skinDebounceTimer)
+        skinDebounceTimer = setTimeout(() => {
+            updateSkinPreview(userInput.value)
+        }, 350)
+    })
+
+    // Si el campo ya tiene un valor cargado previamente, previsualizar la skin de inmediato
+    if (userInput.value) {
+        updateSkinPreview(userInput.value)
+    }
+
+})()

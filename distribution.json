@@ -1,0 +1,357 @@
+{
+    "_comment": "DomiFly MC - Distribution Index. Sube este archivo a tu servidor web y pon su URL en distromanager.js",
+    "version": "1.0.0",
+    "rss": "https://domifly.minecra.fr/noticias.rss",
+    "discord": {
+        "clientId": "TU_DISCORD_APP_ID_AQUI",
+        "smallImageText": "DomiFly MC",
+        "smallImageKey": "icon_small"
+    },
+    "servers": [
+        {
+            "id": "domifly-survival-1",
+            "name": "DomiFly Survival",
+            "description": "Servidor oficial de DomiFly Minecraft",
+            "icon": "https://mc-heads.net/avatar/DomiFly/64",
+            "version": "1.0.0",
+            "address": "domifly.minecra.fr",
+            "minecraftVersion": "1.21.11",
+            "discord": {
+                "shortId": "Survival",
+                "largeImageText": "DomiFly Survival",
+                "largeImageKey": "server_icon"
+            },
+            "mainServer": true,
+            "autoconnect": true,
+            "javaOptions": {
+                "supported": ">=21.x",
+                "suggestedMajor": 21,
+                "ram": {
+                    "recommended": 3072,
+                    "minimum": 2048
+                }
+            },
+            "modules": [
+                {
+                    "id": "net.fabricmc:fabric-loader:0.19.5",
+                    "name": "Fabric Loader 0.19.5",
+                    "type": "Fabric",
+                    "artifact": {
+                        "size": 1984980,
+                        "MD5": "23bf6a8c5ba938db7d13959a2630357f",
+                        "url": "https://maven.fabricmc.net/net/fabricmc/fabric-loader/0.19.5/fabric-loader-0.19.5.jar"
+                    },
+                    "subModules": [
+                        {
+                            "id": "fabric-loader-0.19.5-1.21.11",
+                            "name": "Fabric Version Manifest",
+                            "type": "VersionManifest",
+                            "artifact": {
+                                "size": 2865,
+                                "MD5": "5af63a741e5f0f8ff1059df6bf639295",
+                                "url": "https://meta.fabricmc.net/v2/versions/loader/1.21.11/0.19.5/profile/json"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": "enderscape-fabric-2-1-0-mc1-21-11",
+                    "name": "enderscape-fabric-2.1.0+mc1.21.11",
+                    "type": "File",
+                    "artifact": {
+                        "size": 110399918,
+                        "MD5": "e987a4aca63b91f0a0e6fce5cd276adf",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/enderscape-fabric-2.1.0%2Bmc1.21.11.jar",
+                        "path": "mods/enderscape-fabric-2.1.0+mc1.21.11.jar"
+                    }
+                },
+                {
+                    "id": "fabric-api-0-141-6-1-21-11",
+                    "name": "fabric-api-0.141.6+1.21.11",
+                    "type": "File",
+                    "artifact": {
+                        "size": 2426039,
+                        "MD5": "d16a96ba9b0797054a012cfb1f5fd6a8",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/fabric-api-0.141.6%2B1.21.11.jar",
+                        "path": "mods/fabric-api-0.141.6+1.21.11.jar"
+                    }
+                },
+                {
+                    "id": "fabric-ctov-1-21-11-3-6-2a",
+                    "name": "fabric.ctov-1.21.11-3.6.2a",
+                    "type": "File",
+                    "artifact": {
+                        "size": 8060501,
+                        "MD5": "bbdf1f8c8341bff8ee8411c071a2fdce",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/fabric.ctov-1.21.11-3.6.2a.jar",
+                        "path": "mods/fabric.ctov-1.21.11-3.6.2a.jar"
+                    }
+                },
+                {
+                    "id": "fallingtree-1-21-11-1-21-11-3",
+                    "name": "FallingTree-1.21.11-1.21.11.3",
+                    "type": "File",
+                    "artifact": {
+                        "size": 488371,
+                        "MD5": "6a9bde6e9003ebe047870eeb07ebe7aa",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/FallingTree-1.21.11-1.21.11.3.jar",
+                        "path": "mods/FallingTree-1.21.11-1.21.11.3.jar"
+                    }
+                },
+                {
+                    "id": "forgeconfigapiport-v21-11-1-mc1-21-11-fabric",
+                    "name": "ForgeConfigAPIPort-v21.11.1-mc1.21.11-Fabric",
+                    "type": "File",
+                    "artifact": {
+                        "size": 598009,
+                        "MD5": "625e3619f1bd646b203b17717db2200a",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/ForgeConfigAPIPort-v21.11.1-mc1.21.11-Fabric.jar",
+                        "path": "mods/ForgeConfigAPIPort-v21.11.1-mc1.21.11-Fabric.jar"
+                    }
+                },
+                {
+                    "id": "fusion-1-3-15-fabric-mc1-21-11",
+                    "name": "fusion-1.3.15-fabric-mc1.21.11",
+                    "type": "File",
+                    "artifact": {
+                        "size": 927015,
+                        "MD5": "4ecdc730b49598ed52a86c55cc1f2cdc",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/fusion-1.3.15-fabric-mc1.21.11.jar",
+                        "path": "mods/fusion-1.3.15-fabric-mc1.21.11.jar"
+                    }
+                },
+                {
+                    "id": "gun-core-v1-0-13-data-resource",
+                    "name": "gun-core-V1.0.13-data+resource",
+                    "type": "File",
+                    "artifact": {
+                        "size": 3053999,
+                        "MD5": "23f42a617912b242aa1a54e7dac871d7",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/gun-core-V1.0.13-data%2Bresource.jar",
+                        "path": "mods/gun-core-V1.0.13-data+resource.jar"
+                    }
+                },
+                {
+                    "id": "immediatelyfast-fabric-1-14-3-1-21-11",
+                    "name": "ImmediatelyFast-Fabric-1.14.3+1.21.11",
+                    "type": "File",
+                    "artifact": {
+                        "size": 302709,
+                        "MD5": "ab71dca7ff5846458ff0dfadd4dcb873",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/ImmediatelyFast-Fabric-1.14.3%2B1.21.11.jar",
+                        "path": "mods/ImmediatelyFast-Fabric-1.14.3+1.21.11.jar"
+                    }
+                },
+                {
+                    "id": "jade-1-21-11-fabric-21-1-6",
+                    "name": "Jade-1.21.11-Fabric-21.1.6",
+                    "type": "File",
+                    "artifact": {
+                        "size": 950484,
+                        "MD5": "e9af070e303b6dda6ee86e39a8baedcc",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/Jade-1.21.11-Fabric-21.1.6.jar",
+                        "path": "mods/Jade-1.21.11-Fabric-21.1.6.jar"
+                    }
+                },
+                {
+                    "id": "jei-1-21-11-fabric-27-38-0-97",
+                    "name": "jei-1.21.11-fabric-27.38.0.97",
+                    "type": "File",
+                    "artifact": {
+                        "size": 1894864,
+                        "MD5": "e3ac6a2365ba63bfb9dd4bb22cfe66e7",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/jei-1.21.11-fabric-27.38.0.97.jar",
+                        "path": "mods/jei-1.21.11-fabric-27.38.0.97.jar"
+                    }
+                },
+                {
+                    "id": "journeymap-fabric-1-21-11-6-0-0",
+                    "name": "journeymap-fabric-1.21.11-6.0.0",
+                    "type": "File",
+                    "artifact": {
+                        "size": 4193594,
+                        "MD5": "12674a4335e7374dee92139991aba90a",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/journeymap-fabric-1.21.11-6.0.0.jar",
+                        "path": "mods/journeymap-fabric-1.21.11-6.0.0.jar"
+                    }
+                },
+                {
+                    "id": "justcoordinates-0-10-0-1-21-11-fabric",
+                    "name": "justcoordinates-0.10.0+1.21.11-fabric",
+                    "type": "File",
+                    "artifact": {
+                        "size": 397860,
+                        "MD5": "30319db07fe49036fde7e6dcd4191591",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/justcoordinates-0.10.0%2B1.21.11-fabric.jar",
+                        "path": "mods/justcoordinates-0.10.0+1.21.11-fabric.jar"
+                    }
+                },
+                {
+                    "id": "lithostitched-1-7-2-fabric-21-11",
+                    "name": "lithostitched-1.7.2-fabric-21.11",
+                    "type": "File",
+                    "artifact": {
+                        "size": 813076,
+                        "MD5": "02668d5c4d223e094fcffcb00a2e22da",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/lithostitched-1.7.2-fabric-21.11.jar",
+                        "path": "mods/lithostitched-1.7.2-fabric-21.11.jar"
+                    }
+                },
+                {
+                    "id": "modern-guns-v1-9-1-data",
+                    "name": "modern-guns-V1.9.1-data",
+                    "type": "File",
+                    "artifact": {
+                        "size": 6244246,
+                        "MD5": "674224ac6f0accd14d86a104b212dbcb",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/modern-guns-V1.9.1-data.jar",
+                        "path": "mods/modern-guns-V1.9.1-data.jar"
+                    }
+                },
+                {
+                    "id": "moogsstructurelib-fabric-1-21-11-3-4-0",
+                    "name": "MoogsStructureLib-fabric-1.21.11-3.4.0",
+                    "type": "File",
+                    "artifact": {
+                        "size": 441904,
+                        "MD5": "52d9056819253c3d13867010a30749b7",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/MoogsStructureLib-fabric-1.21.11-3.4.0.jar",
+                        "path": "mods/MoogsStructureLib-fabric-1.21.11-3.4.0.jar"
+                    }
+                },
+                {
+                    "id": "moogsvoyagerstructures-universal-1-21-5-1-3",
+                    "name": "MoogsVoyagerStructures-universal-1.21-5.1.3",
+                    "type": "File",
+                    "artifact": {
+                        "size": 2234287,
+                        "MD5": "17b295cdfc4e49babcc2d59514830760",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/MoogsVoyagerStructures-universal-1.21-5.1.3.jar",
+                        "path": "mods/MoogsVoyagerStructures-universal-1.21-5.1.3.jar"
+                    }
+                },
+                {
+                    "id": "rechiseled-1-2-6-fabric-mc1-21-11",
+                    "name": "rechiseled-1.2.6-fabric-mc1.21.11",
+                    "type": "File",
+                    "artifact": {
+                        "size": 12298404,
+                        "MD5": "3b36b7eea725e57304b10efed8b435dc",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/rechiseled-1.2.6-fabric-mc1.21.11.jar",
+                        "path": "mods/rechiseled-1.2.6-fabric-mc1.21.11.jar"
+                    }
+                },
+                {
+                    "id": "sodium-fabric-0-8-15-beta-1-2bmc1-21-11",
+                    "name": "sodium-fabric-0.8.15-beta.1.2Bmc1.21.11",
+                    "type": "File",
+                    "artifact": {
+                        "size": 1914874,
+                        "MD5": "4a13bf4eae9a4a87dec967217b58f09b",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/sodium-fabric-0.8.15-beta.1.2Bmc1.21.11.jar",
+                        "path": "mods/sodium-fabric-0.8.15-beta.1.2Bmc1.21.11.jar"
+                    }
+                },
+                {
+                    "id": "supermartijn642configlib-1-1-8-fabric-mc1-21-11",
+                    "name": "supermartijn642configlib-1.1.8-fabric-mc1.21.11",
+                    "type": "File",
+                    "artifact": {
+                        "size": 205836,
+                        "MD5": "8828caa78ebea8f6e9450da1f0d50229",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/supermartijn642configlib-1.1.8-fabric-mc1.21.11.jar",
+                        "path": "mods/supermartijn642configlib-1.1.8-fabric-mc1.21.11.jar"
+                    }
+                },
+                {
+                    "id": "supermartijn642corelib-1-1-24b-fabric-mc1-21-11",
+                    "name": "supermartijn642corelib-1.1.24b-fabric-mc1.21.11",
+                    "type": "File",
+                    "artifact": {
+                        "size": 673765,
+                        "MD5": "5d15686d76f3423a75e6055c9f46df43",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/supermartijn642corelib-1.1.24b-fabric-mc1.21.11.jar",
+                        "path": "mods/supermartijn642corelib-1.1.24b-fabric-mc1.21.11.jar"
+                    }
+                },
+                {
+                    "id": "travelersbackpack-fabric-1-21-11-10-11-11",
+                    "name": "travelersbackpack-fabric-1.21.11-10.11.11",
+                    "type": "File",
+                    "artifact": {
+                        "size": 1597574,
+                        "MD5": "10b6065b4bdbd60580cd41175607f279",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/travelersbackpack-fabric-1.21.11-10.11.11.jar",
+                        "path": "mods/travelersbackpack-fabric-1.21.11-10.11.11.jar"
+                    }
+                },
+                {
+                    "id": "yet_another_config_lib_v3-3-8-2-1-21-11-fabric",
+                    "name": "yet_another_config_lib_v3-3.8.2+1.21.11-fabric",
+                    "type": "File",
+                    "artifact": {
+                        "size": 1126948,
+                        "MD5": "0de1337147953ff71854bfd4ce874629",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/yet_another_config_lib_v3-3.8.2%2B1.21.11-fabric.jar",
+                        "path": "mods/yet_another_config_lib_v3-3.8.2+1.21.11-fabric.jar"
+                    }
+                },
+                {
+                    "id": "konkrete-1-9-18-1-21-11-fabric",
+                    "name": "konkrete_fabric_1.9.18_MC_1.21.11",
+                    "type": "File",
+                    "artifact": {
+                        "size": 771623,
+                        "MD5": "13a0bbba48a016a3ca7ac55ac1612027",
+                        "url": "https://cdn.modrinth.com/data/J81TRJWm/versions/6ypTGwlP/konkrete_fabric_1.9.18_MC_1.21.11.jar",
+                        "path": "mods/konkrete_fabric_1.9.18_MC_1.21.11.jar"
+                    }
+                },
+                {
+                    "id": "melody-1-0-15-1-21-11-fabric",
+                    "name": "melody_fabric_1.0.15_MC_1.21.11",
+                    "type": "File",
+                    "artifact": {
+                        "size": 227886,
+                        "MD5": "8b7f0aef2acc3c59d67f79809608b5a8",
+                        "url": "https://cdn.modrinth.com/data/CVT4pFB2/versions/Xo1GAiPu/melody_fabric_1.0.15_MC_1.21.11.jar",
+                        "path": "mods/melody_fabric_1.0.15_MC_1.21.11.jar"
+                    }
+                },
+                {
+                    "id": "fancymenu-3-9-14-1-21-11-fabric",
+                    "name": "fancymenu_fabric_3.9.14_MC_1.21.11",
+                    "type": "File",
+                    "artifact": {
+                        "size": 26234450,
+                        "MD5": "9132258665e3dd0e245ece1a4822093c",
+                        "url": "https://cdn.modrinth.com/data/Wq5SjeWM/versions/Xvytpywc/fancymenu_fabric_3.9.14_MC_1.21.11.jar",
+                        "path": "mods/fancymenu_fabric_3.9.14_MC_1.21.11.jar"
+                    }
+                },
+                {
+                    "id": "fancymenu-config",
+                    "name": "FancyMenu Config Pack",
+                    "type": "File",
+                    "artifact": {
+                        "size": 3726089,
+                        "MD5": "e0f7977581d1e7b77156bbaa581940ee",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/fancymenu-config.zip",
+                        "path": "config/fancymenu-config.zip"
+                    }
+                },
+                {
+                    "id": "customskinloader-14-28-fabric",
+                    "name": "CustomSkinLoader Fabric 14.28",
+                    "type": "File",
+                    "artifact": {
+                        "size": 189001,
+                        "MD5": "94a15c92204f96053cda45c1f3b18f19",
+                        "url": "https://cdn.modrinth.com/data/idMHQ4n2/versions/2C8mIbK2/CustomSkinLoader_Fabric-14.28.jar",
+                        "path": "mods/CustomSkinLoader_Fabric-14.28.jar"
+                    }
+                }
+            ]
+        }
+    ]
+}

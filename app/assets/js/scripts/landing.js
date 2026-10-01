@@ -30,6 +30,7 @@ const {
 // Internal Requirements
 const DiscordWrapper          = require('./assets/js/discordwrapper')
 const ProcessBuilder          = require('./assets/js/processbuilder')
+const AuthlibInjector         = require('./assets/js/authlibinjector')
 
 // Launch Elements
 const launch_content          = document.getElementById('launch_content')
@@ -148,9 +149,9 @@ function updateSelectedAccount(authUser){
         if(authUser.displayName != null){
             username = authUser.displayName
         }
-        if(authUser.uuid != null){
-            document.getElementById('avatarContainer').style.backgroundImage = `url('https://mc-heads.net/body/${authUser.uuid}/right')`
-        }
+        SkinManager.applyAvatar(authUser, document.getElementById('avatarContainer'), 'body')
+    } else {
+        SkinManager.applyAvatar(null, document.getElementById('avatarContainer'), 'body')
     }
     user_text.innerHTML = username
 }
@@ -554,7 +555,28 @@ async function dlAsync(login = true) {
     if(login) {
         const authUser = ConfigManager.getSelectedAccount()
         loggerLaunchSuite.info(`Sending selected account (${authUser.displayName}) to ProcessBuilder.`)
-        let pb = new ProcessBuilder(serv, versionData, modLoaderData, authUser, remote.app.getVersion())
+
+        // Asegura que authlib-injector esté descargado (necesario para auth con Ely.by).
+        let authlibJavaArg = null
+        try {
+            await AuthlibInjector.ensure()
+            authlibJavaArg = AuthlibInjector.javaAgentArg()
+            loggerLaunchSuite.info('authlib-injector listo:', authlibJavaArg)
+        } catch(err) {
+            loggerLaunchSuite.error('No se pudo preparar authlib-injector:', err)
+            showLaunchFailure(Lang.queryJS('landing.dlAsync.errorDuringLaunchTitle'), 'No se pudo descargar authlib-injector. Revisa tu conexión.')
+            return
+        }
+
+        // Asegura que las librerías de Fabric estén descargadas si se usa Fabric.
+        try {
+            const FabricHelper = require('./assets/js/fabrichelper')
+            await FabricHelper.ensureFabricLibraries(ConfigManager.getCommonDirectory(), modLoaderData)
+        } catch(err) {
+            loggerLaunchSuite.warn('Aviso al comprobar librerías Fabric:', err)
+        }
+
+        let pb = new ProcessBuilder(serv, versionData, modLoaderData, authUser, remote.app.getVersion(), authlibJavaArg)
         setLaunchDetails(Lang.queryJS('landing.dlAsync.launchingGame'))
 
         // const SERVER_JOINED_REGEX = /\[.+\]: \[CHAT\] [a-zA-Z0-9_]{1,16} joined the game/
@@ -576,7 +598,8 @@ async function dlAsync(login = true) {
         // the client application has started, and we can hide
         // the progress bar stuff.
         const tempListener = function(data){
-            if(GAME_LAUNCH_REGEX.test(data.trim())){
+            const str = data.trim()
+            if(GAME_LAUNCH_REGEX.test(str) || str.includes('Fabric Loader') || str.includes('LWJGL') || str.includes('Setting user:') || str.includes('Backend library:')){
                 const diff = Date.now()-start
                 if(diff < MIN_LINGER) {
                     setTimeout(onLoadComplete, MIN_LINGER-diff)
@@ -596,9 +619,11 @@ async function dlAsync(login = true) {
             }
         }
 
+        let lastStderr = ''
         const gameErrorListener = function(data){
-            data = data.trim()
-            if(data.indexOf('Could not find or load main class net.minecraft.launchwrapper.Launch') > -1){
+            lastStderr += data + '\n'
+            const str = data.trim()
+            if(str.indexOf('Could not find or load main class net.minecraft.launchwrapper.Launch') > -1){
                 loggerLaunchSuite.error('Game launch failed, LaunchWrapper was not downloaded properly.')
                 showLaunchFailure(Lang.queryJS('landing.dlAsync.errorDuringLaunchTitle'), Lang.queryJS('landing.dlAsync.launchWrapperNotDownloaded'))
             }
@@ -614,16 +639,27 @@ async function dlAsync(login = true) {
 
             setLaunchDetails(Lang.queryJS('landing.dlAsync.doneEnjoyServer'))
 
+            // Manejo del cierre del juego (tanto normal como con error).
+            proc.on('close', (code, signal) => {
+                if(hasRPC){
+                    loggerLaunchSuite.info('Shutting down Discord Rich Presence..')
+                    DiscordWrapper.shutdownRPC()
+                    hasRPC = false
+                }
+                proc = null
+                toggleLaunchArea(false)
+
+                if(code !== 0 && code !== null){
+                    loggerLaunchSuite.error('Minecraft se cerró con código:', code)
+                    const cleanErr = lastStderr.trim().slice(-300) || `Código de salida: ${code}`
+                    showLaunchFailure('El juego se cerró inesperadamente', cleanErr + '\n\nRevisa el archivo minecraft_launch.log para ver todos los detalles.')
+                }
+            })
+
             // Init Discord Hook
             if(distro.rawDistribution.discord != null && serv.rawServer.discord != null){
                 DiscordWrapper.initRPC(distro.rawDistribution.discord, serv.rawServer.discord)
                 hasRPC = true
-                proc.on('close', (code, signal) => {
-                    loggerLaunchSuite.info('Shutting down Discord Rich Presence..')
-                    DiscordWrapper.shutdownRPC()
-                    hasRPC = false
-                    proc = null
-                })
             }
 
         } catch(err) {

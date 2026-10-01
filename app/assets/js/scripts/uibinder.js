@@ -80,20 +80,12 @@ async function showMainUI(data){
             validateSelectedAccount()
         }
 
-        if(ConfigManager.isFirstLaunch()){
-            currentView = VIEWS.welcome
-            $(VIEWS.welcome).fadeIn(1000)
+        if(isLoggedIn){
+            currentView = VIEWS.landing
+            $(VIEWS.landing).fadeIn(1000)
         } else {
-            if(isLoggedIn){
-                currentView = VIEWS.landing
-                $(VIEWS.landing).fadeIn(1000)
-            } else {
-                loginOptionsCancelEnabled(false)
-                loginOptionsViewOnLoginSuccess = VIEWS.landing
-                loginOptionsViewOnLoginCancel = VIEWS.loginOptions
-                currentView = VIEWS.loginOptions
-                $(VIEWS.loginOptions).fadeIn(1000)
-            }
+            currentView = VIEWS.login
+            $(VIEWS.login).fadeIn(1000)
         }
 
         setTimeout(() => {
@@ -342,44 +334,21 @@ async function validateSelectedAccount(){
             setOverlayHandler(() => {
 
                 const isMicrosoft = selectedAcc.type === 'microsoft'
+                const isEly = selectedAcc.type === 'ely'
 
                 if(isMicrosoft) {
                     // Empty for now
+                } else if(isEly) {
+                    // Ely.by — pre-rellena el usuario para comodidad del jugador.
+                    document.getElementById('loginUsername').value = selectedAcc.displayName || selectedAcc.username || ''
                 } else {
-                    // Mojang
-                    // For convenience, pre-populate the username of the account.
+                    // Mojang (legacy)
                     document.getElementById('loginUsername').value = selectedAcc.username
                     validateEmail(selectedAcc.username)
                 }
                 
-                loginOptionsViewOnLoginSuccess = getCurrentView()
-                loginOptionsViewOnLoginCancel = VIEWS.loginOptions
-
-                if(accLen > 0) {
-                    loginOptionsViewOnCancel = getCurrentView()
-                    loginOptionsViewCancelHandler = () => {
-                        if(isMicrosoft) {
-                            ConfigManager.addMicrosoftAuthAccount(
-                                selectedAcc.uuid,
-                                selectedAcc.accessToken,
-                                selectedAcc.username,
-                                selectedAcc.expiresAt,
-                                selectedAcc.microsoft.access_token,
-                                selectedAcc.microsoft.refresh_token,
-                                selectedAcc.microsoft.expires_at
-                            )
-                        } else {
-                            ConfigManager.addMojangAuthAccount(selectedAcc.uuid, selectedAcc.accessToken, selectedAcc.username, selectedAcc.displayName)
-                        }
-                        ConfigManager.save()
-                        validateSelectedAccount()
-                    }
-                    loginOptionsCancelEnabled(true)
-                } else {
-                    loginOptionsCancelEnabled(false)
-                }
                 toggleOverlay(false)
-                switchView(getCurrentView(), VIEWS.loginOptions)
+                switchView(getCurrentView(), VIEWS.login)
             })
             setDismissHandler(() => {
                 if(accLen > 1){

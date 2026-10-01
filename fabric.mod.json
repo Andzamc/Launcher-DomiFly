@@ -1,0 +1,31 @@
+{
+	"schemaVersion": 1,
+	"id": "domifly-mod",
+	"version": "1.0.0",
+	"name": "DomiFly Custom Mod",
+	"description": "Mod personalizado para el servidor DomiFly. Modifica el título de la ventana, pantallas de carga, menú principal y marcas de agua en el juego.",
+	"authors": [
+		"ZamcDev"
+	],
+	"contact": {},
+	"license": "CC0-1.0",
+	"icon": "assets/customminecraft/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"wtf.flonxi.CustomMinecraft"
+		],
+		"client": [
+			"wtf.flonxi.client.CustomMinecraftClient"
+		]
+	},
+	"mixins": [
+		"customminecraft.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.18.4",
+		"minecraft": "~1.21",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

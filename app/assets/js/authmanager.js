@@ -1,425 +1,177 @@
 /**
- * AuthManager
- * 
- * This module aims to abstract login procedures. Results from Mojang's REST api
- * are retrieved through our Mojang module. These results are processed and stored,
- * if applicable, in the config using the ConfigManager. All login procedures should
- * be made through this module.
- * 
- * @module authmanager
+ * AuthManager - DomiFly Minecraft
+ *
+ * Autenticación exclusivamente con cuentas de Ely.by (API tipo Yggdrasil).
+ * Endpoints: https://authserver.ely.by/auth/{authenticate,refresh,validate,invalidate}
+ *
+ * Se usa el módulo nativo `https` de Node (y no fetch) a propósito: el renderer
+ * de Electron corre desde file:// y fetch quedaría bloqueado por CORS.
+ *
+ * La contraseña NUNCA se guarda: solo accessToken y clientToken.
  */
-// Requirements
-const ConfigManager          = require('./configmanager')
-const { LoggerUtil }         = require('helios-core')
-const { RestResponseStatus } = require('helios-core/common')
-const { MojangRestAPI, MojangErrorCode } = require('helios-core/mojang')
-const { MicrosoftAuth, MicrosoftErrorCode } = require('helios-core/microsoft')
-const { AZURE_CLIENT_ID }    = require('./ipcconstants')
-const Lang = require('./langloader')
+const https = require('https')
+const crypto = require('crypto')
+const { LoggerUtil } = require('helios-core')
 
-const log = LoggerUtil.getLogger('AuthManager')
+const ConfigManager = require('./configmanager')
 
-// Error messages
+const logger = LoggerUtil.getLogger('AuthManager')
 
-function microsoftErrorDisplayable(errorCode) {
-    switch (errorCode) {
-        case MicrosoftErrorCode.NO_PROFILE:
-            return {
-                title: Lang.queryJS('auth.microsoft.error.noProfileTitle'),
-                desc: Lang.queryJS('auth.microsoft.error.noProfileDesc')
-            }
-        case MicrosoftErrorCode.NO_XBOX_ACCOUNT:
-            return {
-                title: Lang.queryJS('auth.microsoft.error.noXboxAccountTitle'),
-                desc: Lang.queryJS('auth.microsoft.error.noXboxAccountDesc')
-            }
-        case MicrosoftErrorCode.XBL_BANNED:
-            return {
-                title: Lang.queryJS('auth.microsoft.error.xblBannedTitle'),
-                desc: Lang.queryJS('auth.microsoft.error.xblBannedDesc')
-            }
-        case MicrosoftErrorCode.UNDER_18:
-            return {
-                title: Lang.queryJS('auth.microsoft.error.under18Title'),
-                desc: Lang.queryJS('auth.microsoft.error.under18Desc')
-            }
-        case MicrosoftErrorCode.UNKNOWN:
-            return {
-                title: Lang.queryJS('auth.microsoft.error.unknownTitle'),
-                desc: Lang.queryJS('auth.microsoft.error.unknownDesc')
-            }
-    }
-}
+const ELY_AUTH_BASE = 'https://authserver.ely.by/auth/'
+const ACCOUNT_TYPE = 'ely'
 
-function mojangErrorDisplayable(errorCode) {
-    switch(errorCode) {
-        case MojangErrorCode.ERROR_METHOD_NOT_ALLOWED:
-            return {
-                title: Lang.queryJS('auth.mojang.error.methodNotAllowedTitle'),
-                desc: Lang.queryJS('auth.mojang.error.methodNotAllowedDesc')
-            }
-        case MojangErrorCode.ERROR_NOT_FOUND:
-            return {
-                title: Lang.queryJS('auth.mojang.error.notFoundTitle'),
-                desc: Lang.queryJS('auth.mojang.error.notFoundDesc')
-            }
-        case MojangErrorCode.ERROR_USER_MIGRATED:
-            return {
-                title: Lang.queryJS('auth.mojang.error.accountMigratedTitle'),
-                desc: Lang.queryJS('auth.mojang.error.accountMigratedDesc')
-            }
-        case MojangErrorCode.ERROR_INVALID_CREDENTIALS:
-            return {
-                title: Lang.queryJS('auth.mojang.error.invalidCredentialsTitle'),
-                desc: Lang.queryJS('auth.mojang.error.invalidCredentialsDesc')
-            }
-        case MojangErrorCode.ERROR_RATELIMIT:
-            return {
-                title: Lang.queryJS('auth.mojang.error.tooManyAttemptsTitle'),
-                desc: Lang.queryJS('auth.mojang.error.tooManyAttemptsDesc')
-            }
-        case MojangErrorCode.ERROR_INVALID_TOKEN:
-            return {
-                title: Lang.queryJS('auth.mojang.error.invalidTokenTitle'),
-                desc: Lang.queryJS('auth.mojang.error.invalidTokenDesc')
-            }
-        case MojangErrorCode.ERROR_ACCESS_TOKEN_HAS_PROFILE:
-            return {
-                title: Lang.queryJS('auth.mojang.error.tokenHasProfileTitle'),
-                desc: Lang.queryJS('auth.mojang.error.tokenHasProfileDesc')
-            }
-        case MojangErrorCode.ERROR_CREDENTIALS_MISSING:
-            return {
-                title: Lang.queryJS('auth.mojang.error.credentialsMissingTitle'),
-                desc: Lang.queryJS('auth.mojang.error.credentialsMissingDesc')
-            }
-        case MojangErrorCode.ERROR_INVALID_SALT_VERSION:
-            return {
-                title: Lang.queryJS('auth.mojang.error.invalidSaltVersionTitle'),
-                desc: Lang.queryJS('auth.mojang.error.invalidSaltVersionDesc')
-            }
-        case MojangErrorCode.ERROR_UNSUPPORTED_MEDIA_TYPE:
-            return {
-                title: Lang.queryJS('auth.mojang.error.unsupportedMediaTypeTitle'),
-                desc: Lang.queryJS('auth.mojang.error.unsupportedMediaTypeDesc')
-            }
-        case MojangErrorCode.ERROR_GONE:
-            return {
-                title: Lang.queryJS('auth.mojang.error.accountGoneTitle'),
-                desc: Lang.queryJS('auth.mojang.error.accountGoneDesc')
-            }
-        case MojangErrorCode.ERROR_UNREACHABLE:
-            return {
-                title: Lang.queryJS('auth.mojang.error.unreachableTitle'),
-                desc: Lang.queryJS('auth.mojang.error.unreachableDesc')
-            }
-        case MojangErrorCode.ERROR_NOT_PAID:
-            return {
-                title: Lang.queryJS('auth.mojang.error.gameNotPurchasedTitle'),
-                desc: Lang.queryJS('auth.mojang.error.gameNotPurchasedDesc')
-            }
-        case MojangErrorCode.UNKNOWN:
-            return {
-                title: Lang.queryJS('auth.mojang.error.unknownErrorTitle'),
-                desc: Lang.queryJS('auth.mojang.error.unknownErrorDesc')
-            }
-        default:
-            throw new Error(`Unknown error code: ${errorCode}`)
-    }
-}
+// ---------------------------------------------------------------------------
+// HTTP
+// ---------------------------------------------------------------------------
 
-// Functions
-
-/**
- * Add a Mojang account. This will authenticate the given credentials with Mojang's
- * authserver. The resultant data will be stored as an auth account in the
- * configuration database.
- * 
- * @param {string} username The account username (email if migrated).
- * @param {string} password The account password.
- * @returns {Promise.<Object>} Promise which resolves the resolved authenticated account object.
- */
-exports.addMojangAccount = async function(username, password) {
-    try {
-        const response = await MojangRestAPI.authenticate(username, password, ConfigManager.getClientToken())
-        console.log(response)
-        if(response.responseStatus === RestResponseStatus.SUCCESS) {
-
-            const session = response.data
-            if(session.selectedProfile != null){
-                const ret = ConfigManager.addMojangAuthAccount(session.selectedProfile.id, session.accessToken, username, session.selectedProfile.name)
-                if(ConfigManager.getClientToken() == null){
-                    ConfigManager.setClientToken(session.clientToken)
+function elyRequest(endpoint, body) {
+    return new Promise((resolve, reject) => {
+        const payload = JSON.stringify(body)
+        const req = https.request(ELY_AUTH_BASE + endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(payload)
+            },
+            timeout: 15000
+        }, (res) => {
+            let raw = ''
+            res.setEncoding('utf8')
+            res.on('data', (chunk) => { raw += chunk })
+            res.on('end', () => {
+                let data = {}
+                if (raw) {
+                    try { data = JSON.parse(raw) } catch (e) { /* respuesta sin JSON */ }
                 }
-                ConfigManager.save()
-                return ret
-            } else {
-                return Promise.reject(mojangErrorDisplayable(MojangErrorCode.ERROR_NOT_PAID))
-            }
+                if (res.statusCode >= 200 && res.statusCode < 300) {
+                    return resolve(data) // validate/invalidate responden 204 vacío
+                }
+                const err = new Error(data.errorMessage || `HTTP ${res.statusCode}`)
+                err.status = res.statusCode
+                err.elyError = data.error
+                err.elyMessage = data.errorMessage || ''
+                reject(err)
+            })
+        })
+        req.on('timeout', () => req.destroy(new Error('Tiempo de espera agotado')))
+        req.on('error', (e) => { e.network = true; reject(e) })
+        req.write(payload)
+        req.end()
+    })
+}
 
-        } else {
-            return Promise.reject(mojangErrorDisplayable(response.mojangErrorCode))
-        }
-        
-    } catch (err){
-        log.error(err)
-        return Promise.reject(mojangErrorDisplayable(MojangErrorCode.UNKNOWN))
+// ---------------------------------------------------------------------------
+// Errores
+// ---------------------------------------------------------------------------
+
+/** ¿Ely.by está pidiendo el código de verificación en dos pasos? */
+exports.requiresTwoFactor = function (err) {
+    return !!err && /two[\s-]?factor/i.test(err.elyMessage || err.message || '')
+}
+
+/** Convierte un error de la API en un mensaje entendible en español. */
+exports.describeError = function (err) {
+    if (!err) return 'Error desconocido.'
+    if (err.network) return 'No se pudo conectar con Ely.by. Revisa tu conexión a internet.'
+    if (exports.requiresTwoFactor(err)) return 'Esta cuenta usa verificación en dos pasos. Escribe el código de tu aplicación.'
+    const msg = err.elyMessage || err.message || ''
+    if (/invalid credentials|invalid nickname or password/i.test(msg)) return 'Usuario o contraseña incorrectos.'
+    if (/temporarily banned|too many/i.test(msg) || err.status === 429) return 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.'
+    if (/migrated|minecraft profile/i.test(msg)) return 'Esta cuenta de Ely.by no tiene un perfil de Minecraft.'
+    return msg || 'No se pudo iniciar sesión.'
+}
+
+// ---------------------------------------------------------------------------
+// API pública
+// ---------------------------------------------------------------------------
+
+/**
+ * Inicia sesión con Ely.by y deja la cuenta guardada y seleccionada.
+ * @param {string} usernameOrEmail Nick o correo de Ely.by.
+ * @param {string} password Contraseña.
+ * @param {string} [totp] Código 2FA (solo si la cuenta lo tiene activo).
+ * @returns {Promise<Object>} La cuenta guardada en ConfigManager.
+ */
+exports.addElyAccount = async function (usernameOrEmail, password, totp) {
+    const clientToken = crypto.randomUUID().replace(/-/g, '')
+
+    const data = await elyRequest('authenticate', {
+        username: usernameOrEmail,
+        // Con 2FA, Ely.by espera "contraseña:código" en el mismo campo.
+        password: totp ? `${password}:${totp}` : password,
+        clientToken,
+        requestUser: true
+    })
+
+    const profile = data.selectedProfile
+    if (!profile || !profile.id) {
+        const err = new Error('Esta cuenta de Ely.by no tiene un perfil de Minecraft.')
+        err.elyMessage = err.message
+        throw err
     }
-}
 
-const AUTH_MODE = { FULL: 0, MS_REFRESH: 1, MC_REFRESH: 2 }
+    // Compatibilidad con distintas versiones de Helios.
+    const add = ConfigManager.addMojangAuthAccount || ConfigManager.addAuthAccount
+    const ret = add.call(ConfigManager, profile.id, data.accessToken, profile.name, profile.name)
 
-/**
- * Perform the full MS Auth flow in a given mode.
- * 
- * AUTH_MODE.FULL = Full authorization for a new account.
- * AUTH_MODE.MS_REFRESH = Full refresh authorization.
- * AUTH_MODE.MC_REFRESH = Refresh of the MC token, reusing the MS token.
- * 
- * @param {string} entryCode FULL-AuthCode. MS_REFRESH=refreshToken, MC_REFRESH=accessToken
- * @param {*} authMode The auth mode.
- * @returns An object with all auth data. AccessToken object will be null when mode is MC_REFRESH.
- */
-async function fullMicrosoftAuthFlow(entryCode, authMode) {
-    try {
+    ret.type = ACCOUNT_TYPE
+    ret.clientToken = clientToken
 
-        let accessTokenRaw
-        let accessToken
-        if(authMode !== AUTH_MODE.MC_REFRESH) {
-            const accessTokenResponse = await MicrosoftAuth.getAccessToken(entryCode, authMode === AUTH_MODE.MS_REFRESH, AZURE_CLIENT_ID)
-            if(accessTokenResponse.responseStatus === RestResponseStatus.ERROR) {
-                return Promise.reject(microsoftErrorDisplayable(accessTokenResponse.microsoftErrorCode))
-            }
-            accessToken = accessTokenResponse.data
-            accessTokenRaw = accessToken.access_token
-        } else {
-            accessTokenRaw = entryCode
-        }
-        
-        const xblResponse = await MicrosoftAuth.getXBLToken(accessTokenRaw)
-        if(xblResponse.responseStatus === RestResponseStatus.ERROR) {
-            return Promise.reject(microsoftErrorDisplayable(xblResponse.microsoftErrorCode))
-        }
-        const xstsResonse = await MicrosoftAuth.getXSTSToken(xblResponse.data)
-        if(xstsResonse.responseStatus === RestResponseStatus.ERROR) {
-            return Promise.reject(microsoftErrorDisplayable(xstsResonse.microsoftErrorCode))
-        }
-        const mcTokenResponse = await MicrosoftAuth.getMCAccessToken(xstsResonse.data)
-        if(mcTokenResponse.responseStatus === RestResponseStatus.ERROR) {
-            return Promise.reject(microsoftErrorDisplayable(mcTokenResponse.microsoftErrorCode))
-        }
-        const mcProfileResponse = await MicrosoftAuth.getMCProfile(mcTokenResponse.data.access_token)
-        if(mcProfileResponse.responseStatus === RestResponseStatus.ERROR) {
-            return Promise.reject(microsoftErrorDisplayable(mcProfileResponse.microsoftErrorCode))
-        }
-        return {
-            accessToken,
-            accessTokenRaw,
-            xbl: xblResponse.data,
-            xsts: xstsResonse.data,
-            mcToken: mcTokenResponse.data,
-            mcProfile: mcProfileResponse.data
-        }
-    } catch(err) {
-        log.error(err)
-        return Promise.reject(microsoftErrorDisplayable(MicrosoftErrorCode.UNKNOWN))
-    }
-}
-
-/**
- * Calculate the expiry date. Advance the expiry time by 10 seconds
- * to reduce the liklihood of working with an expired token.
- * 
- * @param {number} nowMs Current time milliseconds.
- * @param {number} epiresInS Expires in (seconds)
- * @returns 
- */
-function calculateExpiryDate(nowMs, epiresInS) {
-    return nowMs + ((epiresInS-10)*1000)
-}
-
-/**
- * Add a Microsoft account. This will pass the provided auth code to Mojang's OAuth2.0 flow.
- * The resultant data will be stored as an auth account in the configuration database.
- * 
- * @param {string} authCode The authCode obtained from microsoft.
- * @returns {Promise.<Object>} Promise which resolves the resolved authenticated account object.
- */
-exports.addMicrosoftAccount = async function(authCode) {
-
-    const fullAuth = await fullMicrosoftAuthFlow(authCode, AUTH_MODE.FULL)
-
-    // Advance expiry by 10 seconds to avoid close calls.
-    const now = new Date().getTime()
-
-    const ret = ConfigManager.addMicrosoftAuthAccount(
-        fullAuth.mcProfile.id,
-        fullAuth.mcToken.access_token,
-        fullAuth.mcProfile.name,
-        calculateExpiryDate(now, fullAuth.mcToken.expires_in),
-        fullAuth.accessToken.access_token,
-        fullAuth.accessToken.refresh_token,
-        calculateExpiryDate(now, fullAuth.accessToken.expires_in)
-    )
+    ConfigManager.setSelectedAccount(profile.id)
     ConfigManager.save()
-
     return ret
 }
 
 /**
- * Remove a Mojang account. This will invalidate the access token associated
- * with the account and then remove it from the database.
- * 
- * @param {string} uuid The UUID of the account to be removed.
- * @returns {Promise.<void>} Promise which resolves to void when the action is complete.
+ * Comprueba la cuenta seleccionada al iniciar el launcher.
+ * - Token válido: true.
+ * - Token vencido: lo refresca, true.
+ * - Rechazado por Ely.by: false (hay que volver a iniciar sesión).
+ * - Sin internet: true (no se echa al jugador; el juego mostrará el error de red).
  */
-exports.removeMojangAccount = async function(uuid){
+exports.validateSelected = async function () {
+    const acc = ConfigManager.getSelectedAccount()
+    if (!acc) return false
+    if (acc.type !== ACCOUNT_TYPE) return false // cuentas antiguas (offline/Microsoft) ya no sirven
+
     try {
-        const authAcc = ConfigManager.getAuthAccount(uuid)
-        const response = await MojangRestAPI.invalidate(authAcc.accessToken, ConfigManager.getClientToken())
-        if(response.responseStatus === RestResponseStatus.SUCCESS) {
-            ConfigManager.removeAuthAccount(uuid)
-            ConfigManager.save()
-            return Promise.resolve()
-        } else {
-            log.error('Error while removing account', response.error)
-            return Promise.reject(response.error)
-        }
-    } catch (err){
-        log.error('Error while removing account', err)
-        return Promise.reject(err)
-    }
-}
-
-/**
- * Remove a Microsoft account. It is expected that the caller will invoke the OAuth logout
- * through the ipc renderer.
- * 
- * @param {string} uuid The UUID of the account to be removed.
- * @returns {Promise.<void>} Promise which resolves to void when the action is complete.
- */
-exports.removeMicrosoftAccount = async function(uuid){
-    try {
-        ConfigManager.removeAuthAccount(uuid)
-        ConfigManager.save()
-        return Promise.resolve()
-    } catch (err){
-        log.error('Error while removing account', err)
-        return Promise.reject(err)
-    }
-}
-
-/**
- * Validate the selected account with Mojang's authserver. If the account is not valid,
- * we will attempt to refresh the access token and update that value. If that fails, a
- * new login will be required.
- * 
- * @returns {Promise.<boolean>} Promise which resolves to true if the access token is valid,
- * otherwise false.
- */
-async function validateSelectedMojangAccount(){
-    const current = ConfigManager.getSelectedAccount()
-    const response = await MojangRestAPI.validate(current.accessToken, ConfigManager.getClientToken())
-
-    if(response.responseStatus === RestResponseStatus.SUCCESS) {
-        const isValid = response.data
-        if(!isValid){
-            const refreshResponse = await MojangRestAPI.refresh(current.accessToken, ConfigManager.getClientToken())
-            if(refreshResponse.responseStatus === RestResponseStatus.SUCCESS) {
-                const session = refreshResponse.data
-                ConfigManager.updateMojangAuthAccount(current.uuid, session.accessToken)
-                ConfigManager.save()
-            } else {
-                log.error('Error while validating selected profile:', refreshResponse.error)
-                log.info('Account access token is invalid.')
-                return false
-            }
-            log.info('Account access token validated.')
-            return true
-        } else {
-            log.info('Account access token validated.')
-            return true
-        }
-    }
-    
-}
-
-/**
- * Validate the selected account with Microsoft's authserver. If the account is not valid,
- * we will attempt to refresh the access token and update that value. If that fails, a
- * new login will be required.
- * 
- * @returns {Promise.<boolean>} Promise which resolves to true if the access token is valid,
- * otherwise false.
- */
-async function validateSelectedMicrosoftAccount(){
-    const current = ConfigManager.getSelectedAccount()
-    const now = new Date().getTime()
-    const mcExpiresAt = current.expiresAt
-    const mcExpired = now >= mcExpiresAt
-
-    if(!mcExpired) {
+        await elyRequest('validate', { accessToken: acc.accessToken, clientToken: acc.clientToken })
         return true
+    } catch (err) {
+        if (err.network) {
+            logger.warn('Sin conexión con Ely.by; se omite la validación de la sesión.')
+            return true
+        }
     }
 
-    // MC token expired. Check MS token.
-
-    const msExpiresAt = current.microsoft.expires_at
-    const msExpired = now >= msExpiresAt
-
-    if(msExpired) {
-        // MS expired, do full refresh.
-        try {
-            const res = await fullMicrosoftAuthFlow(current.microsoft.refresh_token, AUTH_MODE.MS_REFRESH)
-
-            ConfigManager.updateMicrosoftAuthAccount(
-                current.uuid,
-                res.mcToken.access_token,
-                res.accessToken.access_token,
-                res.accessToken.refresh_token,
-                calculateExpiryDate(now, res.accessToken.expires_in),
-                calculateExpiryDate(now, res.mcToken.expires_in)
-            )
-            ConfigManager.save()
-            return true
-        } catch(_err) {
-            return false
-        }
-    } else {
-        // Only MC expired, use existing MS token.
-        try {
-            const res = await fullMicrosoftAuthFlow(current.microsoft.access_token, AUTH_MODE.MC_REFRESH)
-
-            ConfigManager.updateMicrosoftAuthAccount(
-                current.uuid,
-                res.mcToken.access_token,
-                current.microsoft.access_token,
-                current.microsoft.refresh_token,
-                current.microsoft.expires_at,
-                calculateExpiryDate(now, res.mcToken.expires_in)
-            )
-            ConfigManager.save()
-            return true
-        }
-        catch(_err) {
-            return false
-        }
+    try {
+        const data = await elyRequest('refresh', { accessToken: acc.accessToken, clientToken: acc.clientToken })
+        acc.accessToken = data.accessToken
+        ConfigManager.save()
+        logger.info('Token de Ely.by refrescado.')
+        return true
+    } catch (err) {
+        if (err.network) return true
+        logger.warn('La sesión de Ely.by ya no es válida:', err.message)
+        return false
     }
 }
 
-/**
- * Validate the selected auth account.
- * 
- * @returns {Promise.<boolean>} Promise which resolves to true if the access token is valid,
- * otherwise false.
- */
-exports.validateSelected = async function(){
-    const current = ConfigManager.getSelectedAccount()
-
-    if(current.type === 'microsoft') {
-        return await validateSelectedMicrosoftAccount()
-    } else {
-        return await validateSelectedMojangAccount()
+/** Cierra sesión: invalida el token en Ely.by y borra la cuenta local. */
+exports.removeElyAccount = async function (uuid) {
+    const acc = ConfigManager.getAuthAccount(uuid)
+    if (acc) {
+        try {
+            await elyRequest('invalidate', { accessToken: acc.accessToken, clientToken: acc.clientToken })
+        } catch (err) {
+            logger.warn('No se pudo invalidar el token en Ely.by (se borra igual en local):', err.message)
+        }
     }
-    
+    ConfigManager.removeAuthAccount(uuid)
+    ConfigManager.save()
 }
+
+// Alias con los nombres originales de Helios, para que settings.js y otros
+// archivos que aún los llamen sigan funcionando sin tocarlos.
+exports.removeMojangAccount = exports.removeElyAccount
+exports.removeMicrosoftAccount = exports.removeElyAccount
