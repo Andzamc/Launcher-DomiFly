@@ -7,7 +7,7 @@ publish:
   provider: github
   owner: andzamc
   repo: Launcher-DomiFly
-  releaseType: realease
+  releaseType: release
 
 asar: true
 compression: 'maximum'
@@ -19,10 +19,12 @@ extraResources:
   - 'libraries'
 
 # Windows Configuration
-win: 
+win:
+  icon: 'build/icon.ico' 
   target: 
     - target: 'nsis'
       arch: 'x64'
+
 
 # Windows Installer Configuration
 nsis:
@@ -33,6 +35,7 @@ nsis:
 
 # macOS Configuration
 mac:
+  icon: 'build/icon.icns'
   target:
     - target: 'dmg'
       arch:
@@ -44,6 +47,7 @@ mac:
 # Linux Configuration
 linux: 
   target: 'AppImage'
+  icon: 'build/icon.png'
   maintainer: 'ZamcDev'
   vendor: 'ZamcDev'
   synopsis: 'Launcher personalizado de Minecraft para DomiFly'
