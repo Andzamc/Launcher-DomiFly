@@ -1,8 +1,8 @@
 {
   "name": "domifly-launcher",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "productName": "DomiFly Launcher",
-  "description": "Modded Minecraft Launcher",
+  "description": "Launcher oficial para el Servidor DomiFly Minecraft",
   "author": "ZamcDev (https://github.com/Andzamc)",
   "license": "UNLICENSED",
   "homepage": "https://github.com/Andzamc/Launcher-DomiFly",

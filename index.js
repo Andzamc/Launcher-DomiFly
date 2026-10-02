@@ -13,6 +13,12 @@ const { pathToFileURL }                 = require('url')
 const { AZURE_CLIENT_ID, MSFT_OPCODE, MSFT_REPLY_TYPE, MSFT_ERROR, SHELL_OPCODE } = require('./app/assets/js/ipcconstants')
 const LangLoader                        = require('./app/assets/js/langloader')
 
+// Separar datos de desarrollo y producción
+if (!app.isPackaged) {
+    const devUserData = path.join(app.getPath('appData'), 'DomiFlyLauncher-Dev')
+    app.setPath('userData', devUserData)
+}
+
 // Setup Lang
 LangLoader.setupLanguage()
 
