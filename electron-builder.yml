@@ -1,8 +1,9 @@
-appId: 'com.domifly.launcher'
-productName: 'DomiFly Launcher'
-artifactName: '${productName}-setup-${version}.${ext}'
+appId: com.domifly.launcher
+productName: DomiFly Launcher
+# Esta línea elimina la versión del nombre del instalador ejecutable final
+artifactName: "DomiFly Launcher.${ext}"
 
-copyright: 'Copyright © 2026 ZamcDev'
+copyright: 'Copyright © 2026 DomiFly Minecraft by ZamcDev. All rights reserved.'
 publish:
   provider: github
   owner: andzamc
@@ -25,13 +26,14 @@ win:
     - target: 'nsis'
       arch: 'x64'
 
-
 # Windows Installer Configuration
 nsis:
   oneClick: false
   perMachine: false
   allowElevation: true
   allowToChangeInstallationDirectory: true
+  shortcutName: "DomiFly Launcher"
+  uninstallDisplayName: "DomiFly Launcher"
 
 # macOS Configuration
 mac:
@@ -41,19 +43,18 @@ mac:
       arch:
         - 'x64'
         - 'arm64'
-  artifactName: '${productName}-setup-${version}-${arch}.${ext}'
+  artifactName: 'DomiFly Launcher-${arch}.${ext}'
   category: 'public.app-category.games'
 
 # Linux Configuration
 linux: 
   target: 'AppImage'
   icon: 'build/icon.png'
-  maintainer: 'ZamcDev'
-  vendor: 'ZamcDev'
+  maintainer: 'DomiFly Minecraft'
+  vendor: 'DomiFly Minecraft'
   synopsis: 'Launcher personalizado de Minecraft para DomiFly'
   description: 'Launcher automatizado para el servidor DomiFly. Descarga, actualiza y gestiona automáticamente los mods, Java y configuraciones necesarias para jugar.'
   category: 'Game'
-
 
 directories:
   buildResources: 'build'

@@ -71,6 +71,11 @@ class ProcessBuilder {
         let args = this.constructJVMArguments(uberModArr, tempNativePath)
         // Inyectar conexión con Ely.by para renderizar skins en el cliente
         args.push('-javaagent:authlib-injector.jar=https://authserver.ely.by/api/authlib-injector');
+        args.push('-Dfancymenu.editor=true');
+        // Activar el editor visual del mod de interfaz solo si ejecutas localmente
+        /*if (isDev) {
+            args.push('-Dfancymenu.editor=true');
+        }*/
 
         if (mcVersionAtLeast('1.13', this.server.rawServer.minecraftVersion)) {
             //args = args.concat(this.constructModArguments(modObj.fMods))
@@ -980,6 +985,13 @@ class ProcessBuilder {
      */
     _ensureFancyMenuConfig() {
         try {
+            if (isDev) {
+                // Si ya existe la carpeta o el marcador en modo desarrollo, no sobreescribimos tus cambios locales
+                if (fs.existsSync(markerPath) || fs.existsSync(cfgDir)) {
+                    logger.info('Modo desarrollo: Conservando archivos locales de FancyMenu para edición.')
+                    return
+                }
+            }
             const cfgDir = path.join(this.gameDir, 'config', 'fancymenu')
             const zipPath = path.join(this.gameDir, 'config', 'fancymenu-config.zip')
             const markerPath = path.join(cfgDir, '.fancymenu_installed')

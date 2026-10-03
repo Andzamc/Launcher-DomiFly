@@ -7,9 +7,8 @@ const logger = LoggerUtil.getLogger('ConfigManager')
 
 const sysRoot = process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + '/Library/Application Support' : process.env.HOME)
 
-const dataPath = path.join(sysRoot, '.helioslauncher')
-
-const launcherDir = require('@electron/remote').app.getPath('userData')
+const dataPath = path.join(sysRoot, '.domiflylauncher')
+const launcherDir = path.join(sysRoot, '.domiflylauncher')
 
 /**
  * Retrieve the absolute path of the launcher directory.

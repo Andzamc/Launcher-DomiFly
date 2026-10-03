@@ -341,14 +341,14 @@
                     }
                 },
                 {
-                    "id": "customskinloader-14-28-fabric",
-                    "name": "CustomSkinLoader Fabric 14.28",
+                    "id": "dimension-daddy",
+                    "name": "Dimension Daddy",
                     "type": "File",
                     "artifact": {
-                        "size": 189001,
-                        "MD5": "94a15c92204f96053cda45c1f3b18f19",
-                        "url": "https://cdn.modrinth.com/data/idMHQ4n2/versions/2C8mIbK2/CustomSkinLoader_Fabric-14.28.jar",
-                        "path": "mods/CustomSkinLoader_Fabric-14.28.jar"
+                        "size": 119574,
+                        "MD5": "f6fb0fbad1b6f403ea5dd9be3297c4e2",
+                        "url": "https://github.com/Andzamc/domifly-distro/releases/download/v1.0.0/DimensionDaddy-1.0.1.jar",
+                        "path": "mods/DimensionDaddy-1.0.1.jar"
                     }
                 }
             ]
