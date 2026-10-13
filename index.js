@@ -13,7 +13,9 @@ const { pathToFileURL }                 = require('url')
 const { AZURE_CLIENT_ID, MSFT_OPCODE, MSFT_REPLY_TYPE, MSFT_ERROR, SHELL_OPCODE } = require('./app/assets/js/ipcconstants')
 const LangLoader                        = require('./app/assets/js/langloader')
 
-// Separar datos de desarrollo y producción
+// Separar datos de desarrollo y producción:
+// En dev los archivos van a 'DomiFlyLauncher-Dev' para no contaminar la instalación del usuario.
+// En producción Electron usa el directorio por defecto del sistema.
 if (!app.isPackaged) {
     const devUserData = path.join(app.getPath('appData'), 'DomiFlyLauncher-Dev')
     app.setPath('userData', devUserData)
@@ -154,14 +156,16 @@ ipcMain.on(MSFT_OPCODE.OPEN_LOGIN, (ipcEvent, ...arguments_) => {
             let queryMap = {}
             
             new URL(uri).searchParams.forEach((v, k) => {
-                queryMap[k] = v;
-            });
+                queryMap[k] = v
+            })
 
             ipcEvent.reply(MSFT_OPCODE.REPLY_LOGIN, MSFT_REPLY_TYPE.SUCCESS, queryMap, msftAuthViewSuccess)
 
             msftAuthSuccess = true
-            msftAuthWindow.close()
+            // Cerrar la ventana de forma controlada antes de anular la referencia.
+            const winRef = msftAuthWindow
             msftAuthWindow = null
+            winRef.close()
         }
     })
 
@@ -345,8 +349,10 @@ function getPlatformIcon(filename){
     return path.join(__dirname, 'app', 'assets', 'images', `${filename}.${ext}`)
 }
 
-app.on('ready', createWindow)
-app.on('ready', createMenu)
+app.whenReady().then(() => {
+    createWindow()
+    createMenu()
+})
 
 app.on('window-all-closed', () => {
     // On macOS it is common for applications and their menu bar

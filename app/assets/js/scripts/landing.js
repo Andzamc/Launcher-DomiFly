@@ -194,8 +194,8 @@ const refreshMojangStatuses = async function(){
         statuses = MojangRestAPI.getDefaultStatuses()
     }
     
-    greenCount = 0
-    greyCount = 0
+    let greenCount = 0
+    let greyCount = 0
 
     for(let i=0; i<statuses.length; i++){
         const service = statuses[i]
@@ -395,7 +395,7 @@ async function downloadJava(effectiveJavaOptions, launchAfter = true) {
     if(received != asset.size) {
         loggerLanding.warn(`Java Download: Expected ${asset.size} bytes but received ${received}`)
         if(!await validateLocalFile(asset.path, asset.algo, asset.hash)) {
-            log.error(`Hashes do not match, ${asset.id} may be corrupted.`)
+            loggerLanding.error(`Hashes do not match, ${asset.id} may be corrupted.`)
             // Don't know how this could happen, but report it.
             throw new Error(Lang.queryJS('landing.downloadJava.javaDownloadCorruptedError'))
         }

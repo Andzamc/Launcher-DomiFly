@@ -3,7 +3,7 @@
 ## Descripción General
 
 - Launcher de escritorio para DomiFly Minecraft. Descarga, valida, configura y ejecuta una instancia modded del servidor sin exigir al usuario instalar manualmente Java, Fabric ni mods.
-- Base: fork/adaptación de Helios Launcher (`helios-core` y `helios-distribution-types`). El producto declarado en `package.json` es `DomiFly Launcher` v2.2.1; `electron-builder.yml` aún conserva `Helios Launcher` como `productName`.
+- Base: fork/adaptación personalizada (`helios-core` y `helios-distribution-types` como motor subyacente). El producto declarado en `package.json`, `electron-builder.yml` y UI es `DomiFly Launcher`.
 - Stack principal:
   - Electron 39 + Node.js 22, JavaScript CommonJS.
   - EJS/EJS-Electron para vistas, HTML/CSS y jQuery para interacción/animaciones.

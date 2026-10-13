@@ -11,10 +11,19 @@ mediaYouTubeURL = "#"
 mediaDiscordURL = "https://discord.gg/ZsE2e4XMDb"
 
 [ejs.settings]
-sourceGithubLink = "https://github.com/andzamc"
-supportLink = "#"
+sourceGithubLink = "https://github.com/andzamc/Launcher-DomiFly"
+supportLink = "https://discord.gg/ZsE2e4XMDb"
 
 [ejs.welcome]
 welcomeHeader = "BIENVENIDO A DOMIFLY"
 welcomeDescription = "Bienvenido a DomiFly Minecraft. Conéctate a nuestro servidor de supervivencia y disfruta con la comunidad."
 welcomeDescCTA = "Inicia sesión con tu cuenta de Ely.by para comenzar."
+
+[js.discord]
+waiting = "Esperando al cliente..."
+state = "Servidor: {shortId}"
+
+[js.landing.discord]
+loading = "Cargando el juego..."
+joining = "¡Conectando a DomiFly!"
+joined = "¡Jugando en DomiFly!"

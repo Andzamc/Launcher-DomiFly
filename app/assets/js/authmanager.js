@@ -110,9 +110,16 @@ exports.addElyAccount = async function (usernameOrEmail, password, totp) {
         throw err
     }
 
-    // Compatibilidad con distintas versiones de Helios.
-    const add = ConfigManager.addMojangAuthAccount || ConfigManager.addAuthAccount
-    const ret = add.call(ConfigManager, profile.id, data.accessToken, profile.name, profile.name)
+    // Compatibilidad con distintas versiones de Helios:
+    // Determinamos cuál función de registro está disponible y la llamamos directamente.
+    let ret
+    if (typeof ConfigManager.addMojangAuthAccount === 'function') {
+        ret = ConfigManager.addMojangAuthAccount(profile.id, data.accessToken, profile.name, profile.name)
+    } else if (typeof ConfigManager.addAuthAccount === 'function') {
+        ret = ConfigManager.addAuthAccount(profile.id, data.accessToken, profile.name, profile.name)
+    } else {
+        throw new Error('ConfigManager no tiene función de registro de cuenta compatible (addMojangAuthAccount / addAuthAccount).')
+    }
 
     ret.type = ACCOUNT_TYPE
     ret.clientToken = clientToken

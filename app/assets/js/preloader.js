@@ -44,10 +44,10 @@ function onDistroLoad(data){
 
 // Ensure Distribution is downloaded and cached.
 DistroAPI.getDistribution()
-    .then(heliosDistro => {
+    .then(distro => {
         logger.info('Loaded distribution index.')
 
-        onDistroLoad(heliosDistro)
+        onDistroLoad(distro)
     })
     .catch(err => {
         logger.info('Failed to load an older version of the distribution index.')

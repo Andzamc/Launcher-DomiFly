@@ -7,8 +7,18 @@ const logger = LoggerUtil.getLogger('ConfigManager')
 
 const sysRoot = process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + '/Library/Application Support' : process.env.HOME)
 
-const dataPath = path.join(sysRoot, '.domiflylauncher')
-const launcherDir = path.join(sysRoot, '.domiflylauncher')
+const remote = require('@electron/remote');
+
+// Detecta automáticamente si estás en el .exe (empaquetado) o en VS Code (código fuente)
+const isDev = !remote.app.isPackaged;
+const folderName = isDev ? '.domiflylauncher-dev' : '.domiflylauncher';
+
+const dataPath = path.join(sysRoot, folderName);
+const launcherDir = path.join(sysRoot, folderName);
+
+// NOTA: NO llamamos remote.app.setPath aqui. El proceso principal (index.js) ya
+// establece userData antes de que exista cualquier ventana. Sobreescribirlo desde
+// el renderer puede causar inconsistencias de ruta en Electron moderno.
 
 /**
  * Retrieve the absolute path of the launcher directory.
@@ -280,7 +290,7 @@ exports.setClientToken = function(clientToken){
  * @returns {string} The ID of the selected serverpack.
  */
 exports.getSelectedServer = function(def = false){
-    return !def ? config.selectedServer : DEFAULT_CONFIG.clientToken
+    return !def ? config.selectedServer : DEFAULT_CONFIG.selectedServer
 }
 
 /**

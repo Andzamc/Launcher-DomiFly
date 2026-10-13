@@ -21,6 +21,10 @@
     // AuthManager: Módulo que maneja las peticiones HTTP seguras con la API de Ely.by.
     const AuthManager = require('./assets/js/authmanager')
 
+    // SkinManager: Módulo que consulta la API de Ely.by para previsualizar skins.
+    // Se importa aquí explícitamente para no depender del orden de carga de scripts externos.
+    const SkinManager = require('./assets/js/skinmanager')
+
     // --------------------------------------------------------------------------
     // ELEMENTOS DEL HTML (Obtenidos mediante su ID definido en login.ejs)
     // --------------------------------------------------------------------------

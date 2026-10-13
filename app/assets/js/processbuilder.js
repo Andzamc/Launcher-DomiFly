@@ -9,6 +9,7 @@ const os = require('os')
 const path = require('path')
 
 const ConfigManager = require('./configmanager')
+const isDev = require('./isdev')
 
 const logger = LoggerUtil.getLogger('ProcessBuilder')
 
@@ -69,13 +70,13 @@ class ProcessBuilder {
 
         const uberModArr = modObj.fMods.concat(modObj.lMods)
         let args = this.constructJVMArguments(uberModArr, tempNativePath)
-        // Inyectar conexión con Ely.by para renderizar skins en el cliente
-        args.push('-javaagent:authlib-injector.jar=https://authserver.ely.by/api/authlib-injector');
-        args.push('-Dfancymenu.editor=true');
-        // Activar el editor visual del mod de interfaz solo si ejecutas localmente
-        /*if (isDev) {
+        // NOTA: authlib-injector ya se inyecta via this.authlibJavaArg (ruta absoluta) dentro de
+        // constructJVMArguments. NO añadir aquí otra vez o Java recibirá el agente duplicado.
+        // Activar el editor visual de FancyMenu SOLO en modo desarrollo (npm start / --dev).
+        // En producción (compilado) el editor queda desactivado para los jugadores normales.
+        if (isDev) {
             args.push('-Dfancymenu.editor=true');
-        }*/
+        }
 
         if (mcVersionAtLeast('1.13', this.server.rawServer.minecraftVersion)) {
             //args = args.concat(this.constructModArguments(modObj.fMods))
@@ -395,7 +396,7 @@ class ProcessBuilder {
 
         // Java Arguments
         if (process.platform === 'darwin') {
-            args.push('-Xdock:name=HeliosLauncher')
+            args.push('-Xdock:name=DomiFly Launcher')
             args.push('-Xdock:icon=' + path.join(__dirname, '..', 'images', 'minecraft.icns'))
         }
         args.push('-Xmx' + ConfigManager.getMaxRAM(this.server.rawServer.id))
@@ -447,11 +448,9 @@ class ProcessBuilder {
             }
         }
 
-        //args.push('-Dlog4j.configurationFile=D:\\WesterosCraft\\game\\common\\assets\\log_configs\\client-1.12.xml')
-
         // Java Arguments
         if (process.platform === 'darwin') {
-            args.push('-Xdock:name=HeliosLauncher')
+            args.push('-Xdock:name=DomiFly Launcher')
             args.push('-Xdock:icon=' + path.join(__dirname, '..', 'images', 'minecraft.icns'))
         }
         args.push('-Xmx' + ConfigManager.getMaxRAM(this.server.rawServer.id))
@@ -554,7 +553,7 @@ class ProcessBuilder {
                             val = args[i].replace(argDiscovery, tempNativePath)
                             break
                         case 'launcher_name':
-                            val = args[i].replace(argDiscovery, 'Helios-Launcher')
+                            val = args[i].replace(argDiscovery, 'DomiFly-Launcher')
                             break
                         case 'launcher_version':
                             val = args[i].replace(argDiscovery, this.launcherVersion)
